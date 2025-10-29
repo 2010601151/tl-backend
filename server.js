@@ -1,4 +1,3 @@
-
 // server.js
 import express from "express";
 import Stripe from "stripe";
@@ -8,21 +7,28 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load keys from .env
+// Load .env variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Use your LIVE Stripe secret key from .env
+// Make sure STRIPE_SECRET_KEY exists
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error("⚠️ ERROR: STRIPE_SECRET_KEY is not set!");
+  process.exit(1);
+}
+
+// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 
-// Serve index.html at "/"
+// Serve index.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
@@ -32,7 +38,9 @@ app.post("/create-checkout-session", async (req, res) => {
   try {
     const { cartItems } = req.body;
 
-    console.log("Received cart:", cartItems);
+    if (!cartItems || !cartItems.length) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
 
     const line_items = cartItems.map(item => ({
       price_data: {
@@ -50,7 +58,7 @@ app.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ["card"],
       line_items,
       mode: "payment",
-      success_url: "https://www.231cuisine.com/success.html", // ✅ Your domain
+      success_url: "https://www.231cuisine.com/success.html",
       cancel_url: "https://www.231cuisine.com/checkout.html",
     });
 
@@ -69,6 +77,6 @@ app.get("/cancel.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/cancel.html"));
 });
 
-// Use PORT from environment (Render sets this automatically)
+// Start server
 const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
