@@ -12,7 +12,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Replace with your **live or test Stripe secret key**
-const stripe = new Stripe("sk_test_51SLPuYIRB5h9kKSgshilKLT1EtevEiaCqbbsSyLvDnEirvSi2nck6F4dEGWSoc97BjYr5gIE7KqBLKuuTw8Ag4Dd00X0196ORU");
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
@@ -69,3 +68,4 @@ app.get("/cancel.html", (req, res) => {
 
 const PORT = 4242;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
