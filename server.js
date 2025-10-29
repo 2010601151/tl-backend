@@ -5,30 +5,20 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-
-// Load .env variables
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Make sure STRIPE_SECRET_KEY exists
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.error("⚠️ ERROR: STRIPE_SECRET_KEY is not set!");
-  process.exit(1);
-}
-
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Replace with your **live or test Stripe secret key**
+const stripe = new Stripe("sk_test_51SLPuYIRB5h9kKSgshilKLT1EtevEiaCqbbsSyLvDnEirvSi2nck6F4dEGWSoc97BjYr5gIE7KqBLKuuTw8Ag4Dd00X0196ORU");
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 
-// Serve index.html
+// Serve index.html at "/"
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
@@ -38,16 +28,14 @@ app.post("/create-checkout-session", async (req, res) => {
   try {
     const { cartItems } = req.body;
 
-    if (!cartItems || !cartItems.length) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
+    console.log("Received cart:", cartItems);
 
     const line_items = cartItems.map(item => ({
       price_data: {
         currency: "usd",
         product_data: {
           name: item.name,
-          images: [item.image || "https://via.placeholder.com/150"],
+          images: [item.image || "https://via.placeholder.com/150"], // fallback image
         },
         unit_amount: Math.round(item.price * 100),
       },
@@ -55,12 +43,14 @@ app.post("/create-checkout-session", async (req, res) => {
     }));
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items,
-      mode: "payment",
-      success_url: "https://www.231cuisine.com/success.html",
-      cancel_url: "https://www.231cuisine.com/checkout.html",
+  payment_method_types: ["card"],
+  line_items,
+  mode: "payment",
+     success_url: "https://taste-liberia.com/success.html", // ✅ Change to your site domain
+      cancel_url: "https://taste-liberia.com/checkout.html",
     });
+
+
 
     res.json({ id: session.id });
   } catch (err) {
@@ -77,6 +67,5 @@ app.get("/cancel.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/cancel.html"));
 });
 
-// Start server
-const PORT = process.env.PORT || 4242;
+const PORT = 4242;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
